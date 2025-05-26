@@ -57,6 +57,8 @@ class CinnamonUserApplet extends Applet.TextIconApplet {
   _run(cmd) {
     let [success, argv] = GLib.shell_parse_argv("pkexec nextdns " + cmd);
     let flags = GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD;
+    super.set_applet_tooltip("NextDNS is doing something...");
+    super.set_applet_icon_name("content-loading-symbolic");
     try {
       let [result, pid] = GLib.spawn_async(null, argv, null, flags, null);
       return new Promise((resolve, reject) => {
