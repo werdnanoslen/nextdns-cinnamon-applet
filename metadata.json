@@ -1,0 +1,7 @@
+{
+    "uuid": "nextdns@cinnamon.org",
+    "name": "NextDNS Applet",
+    "description": "Manages NextDNS service",
+    "icon": "force-exit",
+    "max-instances": "-1"
+}
