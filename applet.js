@@ -63,8 +63,6 @@ class CinnamonUserApplet extends Applet.TextIconApplet {
     Mainloop.timeout_add_seconds(this.LOOP_PERIOD, Lang.bind(this, this._loop));
   }
 
-
-
   _loop() {
     this._checkStatus();
     try {
@@ -73,10 +71,10 @@ class CinnamonUserApplet extends Applet.TextIconApplet {
       }
 
       let [success, argv] = GLib.shell_parse_argv("nextdns log");
-      let flags = GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD;
-      let [result, pid, stdin, stdoutFd, stderrFd] = GLib.spawn_async_with_pipes(
-        null, argv, null, flags, null
-      );
+      let flags =
+        GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD;
+      let [result, pid, stdin, stdoutFd, stderrFd] =
+        GLib.spawn_async_with_pipes(null, argv, null, flags, null);
 
       if (!result) {
         global.logError("Failed to spawn nextdns log");
@@ -84,14 +82,15 @@ class CinnamonUserApplet extends Applet.TextIconApplet {
       }
 
       let stdoutStream = new Gio.DataInputStream({
-        base_stream: new Gio.UnixInputStream({ fd: stdoutFd, close_fd: true })
+        base_stream: new Gio.UnixInputStream({ fd: stdoutFd, close_fd: true }),
       });
 
       // Read all lines asynchronously
       let lines = [];
       let readLineAsync = (callback) => {
         stdoutStream.read_line_async(
-          GLib.PRIORITY_DEFAULT, null,
+          GLib.PRIORITY_DEFAULT,
+          null,
           (stream, res) => {
             try {
               let [line, length] = stream.read_line_finish(res);
@@ -108,19 +107,17 @@ class CinnamonUserApplet extends Applet.TextIconApplet {
           }
         );
       };
-      
+
       readLineAsync(() => {
         if (lines.length > 0) {
-          for (let i=1; i<(this.LOG_LINES_TO_CHECK+1); ++i) {
+          for (let i = 1; i < this.LOG_LINES_TO_CHECK + 1; ++i) {
             let log = lines[lines.length - i];
             if (log.includes("context deadline exceeded")) {
               let now = new Date();
               let timestamp = log.substring(0, 15);
               let logDate = new Date(`${now.getFullYear()} ${timestamp}`);
               let diffSeconds = (now - logDate) / 1000;
-              global.log(diffSeconds);
               if (diffSeconds >= 0 && diffSeconds <= this.LOOP_PERIOD) {
-                global.log("NextDNS context deadline exceeded, restarting...");
                 this._run("restart")
                   .then(() => this._checkStatus())
                   .catch(global.logError);
@@ -137,7 +134,6 @@ class CinnamonUserApplet extends Applet.TextIconApplet {
   }
 
   _run(cmd) {
-    global.log('running cmd ' + cmd);
     super.isCmding = true;
     let [success, argv] = GLib.shell_parse_argv("pkexec nextdns " + cmd);
     let flags = GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD;
