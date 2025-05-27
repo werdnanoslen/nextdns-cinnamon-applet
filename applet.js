@@ -64,13 +64,14 @@ class CinnamonUserApplet extends Applet.TextIconApplet {
   }
 
   _loop() {
-    this._checkStatus();
     try {
       if (this.isCmding) {
         return true;
       }
 
-      let [success, argv] = GLib.shell_parse_argv("nextdns log");
+      let [success, argv] = GLib.shell_parse_argv(
+        "/bin/sh -c 'nextdns log | tail -3'"
+      );
       let flags =
         GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD;
       let [result, pid, stdin, stdoutFd, stderrFd] =
@@ -85,7 +86,6 @@ class CinnamonUserApplet extends Applet.TextIconApplet {
         base_stream: new Gio.UnixInputStream({ fd: stdoutFd, close_fd: true }),
       });
 
-      // Read all lines asynchronously
       let lines = [];
       let readLineAsync = (callback) => {
         stdoutStream.read_line_async(
@@ -110,8 +110,8 @@ class CinnamonUserApplet extends Applet.TextIconApplet {
 
       readLineAsync(() => {
         if (lines.length > 0) {
-          for (let i = 1; i < this.LOG_LINES_TO_CHECK + 1; ++i) {
-            let log = lines[lines.length - i];
+          for (let i = lines.length; i > 0; --i) {
+            let log = lines[i - 1];
             if (log.includes("context deadline exceeded")) {
               let now = new Date();
               let timestamp = log.substring(0, 15);
@@ -127,6 +127,8 @@ class CinnamonUserApplet extends Applet.TextIconApplet {
           }
         }
       });
+      this._checkStatus();
+      return true;
     } catch (e) {
       global.logError(e);
       return false;
